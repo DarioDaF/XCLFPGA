@@ -2,7 +2,7 @@
 # Xilinx FPGA build makefile
 #   Dario Fagotto, 2019
 #
-# Version: 2.0
+# Version: 2.1
 #
 
 # ISE toolchain
@@ -74,10 +74,10 @@ $(TL_NAME).impact:
 	echo 'setMode -bscan'                        > $@
 	echo 'setCable -p svf -file $(TL_NAME).svf' >> $@
 	echo 'addDevice -p 1 -file $(TL_NAME).bit'  >> $@
-	echo 'program -v -p 1'                      >> $@
+	echo 'program -p 1'                         >> $@
 	echo 'quit'                                 >> $@
 
 $(TL_NAME).svf: $(TL_NAME).impact $(TL_NAME).bit $(TL_NAME).msk
-	$(IMPACT) $(EXTRA) -batch $<
+	$(IMPACT) -batch $<
 
 .PHONY: all

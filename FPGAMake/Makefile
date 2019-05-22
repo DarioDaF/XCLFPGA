@@ -2,7 +2,7 @@
 # Xilinx FPGA main makefile
 #   Dario Fagotto, 2019
 #
-# Version: 2.0
+# Version: 2.1
 #
 
 # Project variables

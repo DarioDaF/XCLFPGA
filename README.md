@@ -32,6 +32,14 @@ If you are a developer and want to edit the parser `SVF.g4` use
 `buildtools.sh` to download the parser compiler and `buildParser.sh SVF.g4`
 to compile it overwiting `SVF*.py` files.
 
+The seirial command set is:
+- `*!` -> tms bit
+- `.,` -> tdi bit
+- `[0-9a-f]` -> tdi nibble (sent LSB first)
+- `:;` -> tdi end bit
+- `<>` -> start and stop tdo output
+- `#` -> sync and flush
+
 ## License
 
 Author: Dario Fagotto, 2019
@@ -39,3 +47,9 @@ Author: Dario Fagotto, 2019
 This program is released under [**Attribution 4.0 International (CC BY 4.0)**](https://creativecommons.org/licenses/by/4.0/)
 you are free to share this software and use it also for commercial products as
 long as you give attribution to the author and link the original material.
+
+## Base work (used as inspiration)
+
+The program used as a base to write the JTAG programmer
+can be found on [github](https://github.com/mattdibi/Programmatore-JTAG-per-Xilinx)
+and is a project by Mattia Dal Ben, Mattia Marson and Manuel Guglielmini.
