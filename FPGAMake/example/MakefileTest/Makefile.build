@@ -1,0 +1,83 @@
+#
+# Xilinx FPGA build makefile
+#   Dario Fagotto, 2019
+#
+# Version: 2.0
+#
+
+# ISE toolchain
+
+XST := $(ISE_BIN)/xst
+NGDBUILD := $(ISE_BIN)/ngdbuild
+MAP := $(ISE_BIN)/map
+PAR := $(ISE_BIN)/par
+BITGEN := $(ISE_BIN)/bitgen
+IMPACT := $(ISE_BIN)/impact
+
+# Project file names
+
+PRJ_FILE := ../$(TL_NAME).prj
+UCF_FILE := ../$(TL_NAME).ucf
+XXST_FILE := ../$(TL_NAME).xxst
+
+# Main makefile
+
+all: $(TL_NAME).svf
+
+SMARTGUIDE_FILE := _$(TL_NAME).ncd
+SMARTGUIDE := 
+ifneq (, $(wildcard $(SMARTGUIDE_FILE)))
+SMARTGUIDE := -smartguide $(SMARTGUIDE_FILE)
+endif
+
+xst/tmp/:
+	mkdir -p $@
+$(TL_NAME).xst: $(XXST_FILE) | xst/tmp/
+	@echo 'set -tmpdir "xst/tmp"'  > $@
+	@echo 'set -xsthdpdir "xst"'  >> $@
+	@echo 'run'                   >> $@
+	@echo '-ifn $(PRJ_FILE)'      >> $@
+	@echo '-ifmt mixed'           >> $@
+	@echo '-ofn $(TL_NAME).ngc'   >> $@
+	@echo '-ofmt NGC'             >> $@
+	@echo '-p $(FPGA_PART)'       >> $@
+	@echo '-top $(TL_NAME)'       >> $@
+	@cat $<                       >> $@
+
+# Synth
+$(TL_NAME).ngc: $(TL_NAME).xst $(PRJ_FILE) ../src/*
+	$(XST) $(EXTRA) -ifn $<
+
+# Translate
+#   Includes constraints in design
+$(TL_NAME).ngd: $(TL_NAME).ngc $(UCF_FILE)
+	$(NGDBUILD) $(EXTRA) -uc $(UCF_FILE) -p $(FPGA_PART) $< $@
+
+# Map
+#   -timing instructs to place during map to optimize timing
+#   -ol high enables high effort for pack and place
+#   -logic_opt on does extra optimization with resynth
+$(TL_NAME)_MAP.ncd: $(TL_NAME).ngd
+	$(MAP) $(EXTRA) $(SMARTGUIDE) -p $(FPGA_PART) -timing -ol high -w -o $@ $<
+
+# Place and route
+#   $(SMARTGUIDE) on PAR outputs also a report
+$(TL_NAME).ncd: $(TL_NAME)_MAP.ncd
+	$(PAR) $(EXTRA) -w $< $@
+	cp $@ $(SMARTGUIDE_FILE)
+
+# -g Binary:Yes builds BIN file too containing raw bitsream
+$(TL_NAME).bit $(TL_NAME).msk: $(TL_NAME).ncd
+	$(BITGEN) $(EXTRA) -m -w $<
+
+$(TL_NAME).impact:
+	echo 'setMode -bscan'                        > $@
+	echo 'setCable -p svf -file $(TL_NAME).svf' >> $@
+	echo 'addDevice -p 1 -file $(TL_NAME).bit'  >> $@
+	echo 'program -p 1'                         >> $@
+	echo 'quit'                                 >> $@
+
+$(TL_NAME).svf: $(TL_NAME).impact $(TL_NAME).bit $(TL_NAME).msk
+	$(IMPACT) -batch $<
+
+.PHONY: all
